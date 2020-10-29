@@ -16,11 +16,14 @@ package jsonexporter
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
-
-	"github.com/kawamuray/jsonpath" // Originally: "github.com/NickSardo/jsonpath"
+	"encoding/json"
+	//"net/http"
+	"os"
+	"github.com/kawamuray/jsonpath"
+	jso "github.com/PaesslerAG/jsonpath"  // Originally: "github.com/NickSardo/jsonpath"
 	"github.com/prometheus-community/json_exporter/harness"
 	log "github.com/sirupsen/logrus"
+  dac "github.com/xinsnake/go-http-digest-auth-client"
 )
 
 type Collector struct {
@@ -66,7 +69,24 @@ func NewCollector(endpoint string, scrapers []JsonScraper) *Collector {
 }
 
 func (col *Collector) fetchJson() ([]byte, error) {
-	resp, err := http.Get(col.Endpoint)
+	//resp, err := http.Get(col.Endpoint)
+	dr := dac.NewRequest("user", "password", "GET", col.Endpoint, "")
+	resp, err := dr.Execute()
+	dato, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	v := interface{}(nil)
+	json.Unmarshal(dato, &v)
+	list, err := jso.Get(`$.results[?(@.statusName == "PENDING")].links..href`, v)
+	if err != nil {
+    fmt.Println(err)
+    os.Exit(1)
+	}
+	url := ""
+	for _, value := range list.([]interface{}) {
+    url = value.(string)
+	}
+	dr = dac.NewRequest("user", "password", "GET", url, "")
+	resp, err = dr.Execute()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch json from endpoint;endpoint:<%s>,err:<%s>", col.Endpoint, err)
 	}
@@ -76,9 +96,9 @@ func (col *Collector) fetchJson() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body;err:<%s>", err)
 	}
-
 	return data, nil
 }
+
 
 func (col *Collector) Collect(reg *harness.MetricRegistry) {
 	json, err := col.fetchJson()

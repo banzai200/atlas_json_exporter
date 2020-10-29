@@ -1,15 +1,25 @@
-- name: example_global_value
-  path: $.counter
-  labels:
-    environment: beta # static label
 
-- name: example_value
+- name: Invoice
   type: object
-  path: $.values[*]?(@.state == "ACTIVE")
+  path: $.lineItems[*]
   labels:
-    environment: beta # static label
-    id: $.id          # dynamic label
+    environment: $.sku
+    date: $.created
   values:
-    active: 1      # static value
-    count: $.count # dynamic value
-    boolean: $.some_boolean
+    totalPriceCents: $.totalPriceCents
+
+- name: ClusterValue
+  type: object
+  path: $.lineItems[*]?(@.clusterName != "")
+  labels:
+    cluster: $.clusterName
+    environment: $.sku
+    date: $.created
+  values:
+    totalPriceCents: $.totalPriceCents
+
+- name: id
+  path: $.creditsCents
+  labels:
+    id: $.id
+    endDate: $.endDate

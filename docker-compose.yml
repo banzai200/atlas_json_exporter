@@ -1,0 +1,15 @@
+version: '3.3'
+services:
+    atlas-exporter:
+        volumes:
+            - './json_exporter:/bin/json_exporter'
+            - './json_exporter/example/config.yml:/config.yml'
+            - './json_exporter/entrypoint.sh:/entrypoint.sh'
+        environment:
+            - 'url=https://cloud.mongodb.com/api/atlas/v1.0/orgs/(ORG_ID)/invoices'
+        entrypoint:
+            - ./entrypoint.sh
+        ports:
+            - '7979:7979'
+        container_name: 'atlas-exporter'
+        image: quay.io/prometheuscommunity/json-exporter
